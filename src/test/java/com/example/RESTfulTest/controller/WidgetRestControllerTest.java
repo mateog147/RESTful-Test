@@ -76,6 +76,20 @@ class WidgetRestControllerTest {
         mockMvc.perform(get("/rest/widget/{id}", 1L))
                 // Validate the response code
                 .andExpect(status().isNotFound());
+                
+    }
+    
+    @Test
+    @DisplayName("GET /rest/widget/1 - Found")
+    void testGetWidgetByIdtFound() throws Exception {
+        // Setup our mocked service
+        Widget widgetToReturn = new Widget(1L, "New Widget", "This is my widget", 1);
+        doReturn(Optional.of(widgetToReturn) ).when(service).findById(1L);
+
+        // Execute the GET request
+        mockMvc.perform(get("/rest/widget/{id}", 1L)) 
+                // Validate the response code
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -104,6 +118,49 @@ class WidgetRestControllerTest {
                 .andExpect(jsonPath("$.name", is("New Widget")))
                 .andExpect(jsonPath("$.description", is("This is my widget")))
                 .andExpect(jsonPath("$.version", is(1)));
+    }
+    
+    @Test
+    @DisplayName("PUT /rest/widget/{id} - Found")
+    void testUpdateWidget() throws Exception {
+        // Setup our mocked service
+        //headers
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add(HttpHeaders.IF_MATCH, "1");
+        Widget widgetToUpdate = new Widget(1L, "New Widget", "This is my widget", 1);
+        
+        doReturn(Optional.of(widgetToUpdate)).when(service).findById(1L);
+        doReturn(widgetToUpdate).when(service).save(any());
+        
+        // Execute the PUT request
+        mockMvc.perform(put("/rest/widget/{id}",1L)
+                .headers(httpHeaders)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(widgetToUpdate)))
+
+                // Validate the response code and content type
+                .andExpect(status().isOk());
+    }
+    
+    @Test
+    @DisplayName("PUT /rest/widget/{id} - Not Found")
+    void testUpdateWidgetNotFound() throws Exception {
+        // Setup our mocked service
+        //headers
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add(HttpHeaders.IF_MATCH, "1");
+        Widget widgetToUpdate = new Widget(1L, "New Widget", "This is my widget", 1);
+        
+        doReturn(Optional.empty()).when(service).findById(1L);
+        
+        // Execute the PUT request
+        mockMvc.perform(put("/rest/widget/{id}",1L)
+                .headers(httpHeaders)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(widgetToUpdate)))
+
+                // Validate the response code and content type
+                .andExpect(status().isNotFound());
     }
 
 
